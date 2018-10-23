@@ -62,6 +62,14 @@ public class GenericSpecificationBuilder<E> {
 	}
 
 	@SuppressWarnings("unchecked")
+	private <C> GenericSpecificationBuilder<E>  addCriteria(String key, C value, CriteriaOperation operation, RelationType relationType) {
+		if (value != null) {
+			filterCriteriaList.add(new FilterCriteria<>(key, value, operation, (Class<C>) value.getClass(), relationType));
+		}
+		return this;
+	}
+
+	@SuppressWarnings("unchecked")
 	private <C extends Comparable<? super C>> GenericSpecificationBuilder<E>  addComparableCriteria(String key, C value, CriteriaOperation operation) {
 		if (value != null) {
 			filterCriteriaList.add(new ComparableFilterCriteria<C>(key, value, operation, (Class<C>) value.getClass()));
@@ -99,7 +107,11 @@ public class GenericSpecificationBuilder<E> {
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> equals(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.EQUAL);
+		return addCriteria(key, value, CriteriaOperation.EQUAL, RelationType.NO_RELATION);
+	}
+
+	public GenericSpecificationBuilder<E> equals(String key, Object value, RelationType relationType) {
+		return addCriteria(key, value, CriteriaOperation.EQUAL, relationType);
 	}
 
 	/**

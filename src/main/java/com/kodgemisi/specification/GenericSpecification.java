@@ -49,23 +49,25 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 				root.fetch(key);
 				return null;
 			}
-		case EQUAL:
-			return criteriaBuilder.equal(root.get(key), filterCriteria.getValue());
-
-		case EQUAL_TO_ONE: {
-			final String columns[] = key.split("\\.");
-			Path<?> path = root.get(columns[0]);
-			for (int i = 1; i < columns.length; i++) {
-				path = path.get(columns[i]);
+		case EQUAL: {
+			if (filterCriteria.getRelationType().equals(RelationType.NO_RELATION)) {
+				return criteriaBuilder.equal(root.get(key), filterCriteria.getValue());
 			}
+			else if (filterCriteria.getRelationType().equals(RelationType.TO_ONE)) {
+				final String columns[] = key.split("\\.");
+				Path<?> path = root.get(columns[0]);
+				for (int i = 1; i < columns.length; i++) {
+					path = path.get(columns[i]);
+				}
 
-			return criteriaBuilder.equal(path, filterCriteria.getValue());
+				return criteriaBuilder.equal(path, filterCriteria.getValue());
+			}
+			else {
+				final String columns[] = key.split("\\.");
+				final Join<T, ?> joinedTable = root.join(columns[0]);
+				return criteriaBuilder.equal(joinedTable.get(columns[1]), filterCriteria.getValue());
+			}
 		}
-
-		case EQUAL_TO_MANY: {
-			final String columns[] = key.split("\\.");
-			final Join<T, ?> joinedTable = root.join(columns[0]);
-			return criteriaBuilder.equal(joinedTable.get(columns[1]), filterCriteria.getValue());}
 
 		case LIKE:
 			return criteriaBuilder.like(root.get(key), "%" + filterCriteria.getValue() + "%");

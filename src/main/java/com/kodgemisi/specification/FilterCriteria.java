@@ -1,6 +1,5 @@
 package com.kodgemisi.specification;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.lang.NonNull;
@@ -18,7 +17,6 @@ import org.springframework.lang.NonNull;
  */
 @Getter
 @Setter
-@AllArgsConstructor
 class FilterCriteria<T> {
 
 	@NonNull
@@ -31,10 +29,29 @@ class FilterCriteria<T> {
 
 	private final Class<T> clazz;
 
+	private final RelationType relationType;
+
+	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz) {
+		this.key = key;
+		this.value = value;
+		this.operation = operation;
+		this.clazz = clazz;
+		this.relationType = RelationType.NO_RELATION;
+	}
+
+	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz, RelationType relationType) {
+		this.key = key;
+		this.value = value;
+		this.operation = operation;
+		this.clazz = clazz;
+		this.relationType = relationType;
+	}
+
 	FilterCriteria(String key, CriteriaOperation operation, Class<T> clazz) {
 		this.key = key;
 		this.operation = operation;
 		this.clazz = clazz;
 		this.value = null;
+		this.relationType = RelationType.NO_RELATION;
 	}
 }
