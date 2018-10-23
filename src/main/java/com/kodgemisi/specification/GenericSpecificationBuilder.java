@@ -6,16 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created on October, 2018
- *
- * @author Destan Sarpkaya
- * @author Ersan Ceylan
- */
-
-/**
  * <p>
  * {@link Specification} builder class that helps building complex queries
- *  * by chaining methods which provided in this class. For example:
+ * by chaining methods which are provided in this class. For example:
  * </p>
  *
  * <blockquote><pre>
@@ -27,6 +20,11 @@ import java.util.List;
  *
  *
  * @param <E>
+ *
+ * Created on October, 2018
+ *
+ * @author Destan Sarpkaya
+ * @author Ersan Ceylan
  */
 public class GenericSpecificationBuilder<E> {
 
@@ -59,6 +57,14 @@ public class GenericSpecificationBuilder<E> {
 	private <C> GenericSpecificationBuilder<E>  addCriteria(String key, C value, CriteriaOperation operation) {
 		if (value != null) {
 			filterCriteriaList.add(new FilterCriteria<>(key, value, operation, (Class<C>) value.getClass()));
+		}
+		return this;
+	}
+
+	@SuppressWarnings("unchecked")
+	private <C extends Comparable<? super C>> GenericSpecificationBuilder<E>  addComparableCriteria(String key, C value, CriteriaOperation operation) {
+		if (value != null) {
+			filterCriteriaList.add(new ComparableFilterCriteria<C>(key, value, operation, (Class<C>) value.getClass()));
 		}
 		return this;
 	}
@@ -122,8 +128,8 @@ public class GenericSpecificationBuilder<E> {
 	 * @param value
 	 * @return
 	 */
-	public GenericSpecificationBuilder<E> lessThan(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.LESS_THAN);
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> lessThan(String key, C value) {
+		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN);
 	}
 
 	/**
@@ -132,8 +138,8 @@ public class GenericSpecificationBuilder<E> {
 	 * @param value
 	 * @return
 	 */
-	public GenericSpecificationBuilder<E> lessThanOrEqualTo(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.LESS_THAN_OR_EQUAL_TO);
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> lessThanOrEqualTo(String key, C value) {
+		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN_OR_EQUAL_TO);
 	}
 
 	/**
@@ -142,8 +148,8 @@ public class GenericSpecificationBuilder<E> {
 	 * @param value
 	 * @return
 	 */
-	public GenericSpecificationBuilder<E> greaterThan(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.GREATER_THAN);
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> greaterThan(String key, C value) {
+		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN);
 	}
 
 	/**
@@ -152,8 +158,8 @@ public class GenericSpecificationBuilder<E> {
 	 * @param value
 	 * @return
 	 */
-	public GenericSpecificationBuilder<E> greaterThanOrEqualTo(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.GREATER_THAN_OR_EQUAL_TO);
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> greaterThanOrEqualTo(String key, C value) {
+		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN_OR_EQUAL_TO);
 	}
 
 	/**

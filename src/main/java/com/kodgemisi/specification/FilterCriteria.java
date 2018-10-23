@@ -24,7 +24,7 @@ class FilterCriteria<T> {
 	@NonNull
 	private final String key;
 
-	private T value;
+	private final T value;
 
 	@NonNull
 	private final CriteriaOperation operation;
@@ -35,5 +35,6 @@ class FilterCriteria<T> {
 		this.key = key;
 		this.operation = operation;
 		this.clazz = clazz;
+		this.value = null;
 	}
 }

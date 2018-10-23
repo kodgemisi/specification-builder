@@ -6,13 +6,6 @@ import org.springframework.data.jpa.domain.Specification;
 import javax.persistence.criteria.*;
 
 /**
- * Created on October, 2018
- *
- * @author Destan Sarpkaya
- * @author Ersan Ceylan
- */
-
-/**
  * <p>
  * Class which implements {@link org.springframework.data.jpa.domain.Specification} interface
  * to generate {@link javax.persistence.criteria.Predicate} object
@@ -21,19 +14,24 @@ import javax.persistence.criteria.*;
  *
  * @param <T>
  * @param <C>
+ *
+ * Created on October, 2018
+ *
+ * @author Destan Sarpkaya
+ * @author Ersan Ceylan
  */
+
 @SuppressWarnings({"rawtypes", "unchecked"})
 @AllArgsConstructor
-public class GenericSpecification<T, C extends Comparable> implements Specification<T> {
+class GenericSpecification<E, T, C extends Comparable<? super C>> implements Specification<E> {
 
-	private final FilterCriteria<C> filterCriteria;
+	private final FilterCriteria<T> filterCriteria;
 
 	@Override
-	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+	public Predicate toPredicate(Root<E> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 
 		final CriteriaOperation operation = filterCriteria.getOperation();
 		final String key = filterCriteria.getKey();
-		final C value = filterCriteria.getValue();
 
 		switch (operation) {
 		case JOIN:
@@ -52,7 +50,7 @@ public class GenericSpecification<T, C extends Comparable> implements Specificat
 				return null;
 			}
 		case EQUAL:
-			return criteriaBuilder.equal(root.get(key), value);
+			return criteriaBuilder.equal(root.get(key), filterCriteria.getValue());
 
 		case EQUAL_TO_ONE: {
 			final String columns[] = key.split("\\.");
@@ -61,31 +59,49 @@ public class GenericSpecification<T, C extends Comparable> implements Specificat
 				path = path.get(columns[i]);
 			}
 
-			return criteriaBuilder.equal(path, value);
+			return criteriaBuilder.equal(path, filterCriteria.getValue());
 		}
 
 		case EQUAL_TO_MANY: {
 			final String columns[] = key.split("\\.");
 			final Join<T, ?> joinedTable = root.join(columns[0]);
-			return criteriaBuilder.equal(joinedTable.get(columns[1]), value);}
+			return criteriaBuilder.equal(joinedTable.get(columns[1]), filterCriteria.getValue());}
 
 		case LIKE:
-			return criteriaBuilder.like(root.get(key), "%" + value + "%");
+			return criteriaBuilder.like(root.get(key), "%" + filterCriteria.getValue() + "%");
 
-		case GREATER_THAN:
-			return criteriaBuilder.greaterThan(root.get(key).as(filterCriteria.getClazz()), value);
+		case IN:
+			return root.get(key).in(filterCriteria.getValue());
 
-		case GREATER_THAN_OR_EQUAL_TO:
-			return criteriaBuilder.greaterThanOrEqualTo(root.get(key).as(filterCriteria.getClazz()), value);
+		case GREATER_THAN: {
+			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+			return criteriaBuilder.greaterThan(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+		}
 
-		case LESS_THAN:
-			return criteriaBuilder.lessThan(root.get(key).as(filterCriteria.getClazz()), value);
+		case GREATER_THAN_OR_EQUAL_TO: {
+			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+			return criteriaBuilder.greaterThanOrEqualTo(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+		}
 
-		case LESS_THAN_OR_EQUAL_TO:
-			return criteriaBuilder.lessThanOrEqualTo(root.get(key).as(filterCriteria.getClazz()), value);
+		case LESS_THAN: {
+			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+			return criteriaBuilder.lessThan(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+		}
+
+		case LESS_THAN_OR_EQUAL_TO: {
+			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+			return criteriaBuilder.lessThanOrEqualTo(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+		}
 
 		default:
 			return null;
 		}
+	}
+
+	private ComparableFilterCriteria<C> getComparableFilterCriteria() {
+		if(this.filterCriteria instanceof ComparableFilterCriteria) {
+			return (ComparableFilterCriteria) filterCriteria;
+		}
+		throw new ClassCastException("TODO");//TODO
 	}
 }
