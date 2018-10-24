@@ -53,11 +53,8 @@ public class GenericSpecificationBuilder<E> {
 		return new GenericSpecificationBuilder<>();
 	}
 
-	@SuppressWarnings("unchecked")
-	private <C> GenericSpecificationBuilder<E>  addCriteria(String key, C value, CriteriaOperation operation) {
-		if (value != null) {
-			filterCriteriaList.add(new FilterCriteria<>(key, value, operation, (Class<C>) value.getClass()));
-		}
+	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation) {
+		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, Void.class));
 		return this;
 	}
 
@@ -70,15 +67,10 @@ public class GenericSpecificationBuilder<E> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <C extends Comparable<? super C>> GenericSpecificationBuilder<E>  addComparableCriteria(String key, C value, CriteriaOperation operation) {
+	private <C extends Comparable<? super C>> GenericSpecificationBuilder<E>  addComparableCriteria(String key, C value, CriteriaOperation operation, RelationType relationType) {
 		if (value != null) {
-			filterCriteriaList.add(new ComparableFilterCriteria<C>(key, value, operation, (Class<C>) value.getClass()));
+			filterCriteriaList.add(new ComparableFilterCriteria<C>(key, value, operation, (Class<C>) value.getClass(), relationType));
 		}
-		return this;
-	}
-
-	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation) {
-		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, Void.class));
 		return this;
 	}
 
@@ -102,6 +94,12 @@ public class GenericSpecificationBuilder<E> {
 
 	/**
 	 * Adds a new "equals" criteria to the filterCriteriaList
+	 * For example:
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.equals("gender", Gender.FEMALE)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
@@ -110,88 +108,209 @@ public class GenericSpecificationBuilder<E> {
 		return addCriteria(key, value, CriteriaOperation.EQUAL, RelationType.NO_RELATION);
 	}
 
+	/**
+	 * Adds a new "equals" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * For example:
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.equals("addresses.city", cityName, {@link com.kodgemisi.specification.RelationType} RelationType.TO_MANY)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key field name
+	 * @param value
+	 * @param relationType
+	 * @return
+	 */
 	public GenericSpecificationBuilder<E> equals(String key, Object value, RelationType relationType) {
 		return addCriteria(key, value, CriteriaOperation.EQUAL, relationType);
 	}
 
 	/**
 	 * Adds a new "like" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.like("bio", keyword)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> like(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.LIKE);
+		return addCriteria(key, value, CriteriaOperation.LIKE, RelationType.NO_RELATION);
+	}
+
+	/**
+	 * Adds a new "like" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.like("department.name", departmentName, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key field name
+	 * @param value
+	 * @return
+	 */
+	public GenericSpecificationBuilder<E> like(String key, Object value, RelationType relationType) {
+		return addCriteria(key, value, CriteriaOperation.LIKE, relationType);
 	}
 
 	/**
 	 * Adds a new "in" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.in("name", name)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> in(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.IN);
+		return addCriteria(key, value, CriteriaOperation.IN, RelationType.NO_RELATION);
+	}
+
+	/**
+	 * Adds a new "in" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.in("skills.name", Arrays.asList("JAVA", "RUBY"), {@link com.kodgemisi.specification.RelationType} RelationType.TO_MANY)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key
+	 * @param value
+	 * @param relationType
+	 * @return
+	 */
+	public GenericSpecificationBuilder<E> in(String key, Object value, RelationType relationType) {
+		return addCriteria(key, value, CriteriaOperation.IN, relationType);
 	}
 
 	/**
 	 * Adds a new "lessThan" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.lessThan("birthDate", thirtyYearsAgo)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
 	 */
 	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> lessThan(String key, C value) {
-		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN);
+		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN, RelationType.NO_RELATION);
+	}
+
+	/**
+	 * Adds a new "lessThan" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.lessThan("wage.amount", maxWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key field name
+	 * @param value
+	 * @return
+	 */
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> lessThan(String key, C value, RelationType relationType) {
+		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN, relationType);
 	}
 
 	/**
 	 * Adds a new "lessThanOrEqualTo" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.lessThanOrEqualTo("birthDate", thirtyYearsAgo)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
 	 */
 	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> lessThanOrEqualTo(String key, C value) {
-		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN_OR_EQUAL_TO);
+		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN_OR_EQUAL_TO, RelationType.NO_RELATION);
+	}
+
+	/**
+	 * Adds a new "lessThanOrEqualTo" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.lessThanOrEqualTo("wage.amount", maxWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key field name
+	 * @param value
+	 * @return
+	 */
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> lessThanOrEqualTo(String key, C value, RelationType relationType) {
+		return addComparableCriteria(key, value, CriteriaOperation.LESS_THAN_OR_EQUAL_TO, relationType);
 	}
 
 	/**
 	 * Adds a new "greaterThan" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.greaterThan("birthDate", thirtyYearsAgo)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
 	 */
 	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> greaterThan(String key, C value) {
-		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN);
+		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN, RelationType.NO_RELATION);
+	}
+
+	/**
+	 * Adds a new "greaterThan" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.greaterThan("wage.amount", minWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key field name
+	 * @param value
+	 * @return
+	 */
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> greaterThan(String key, C value, RelationType relationType) {
+		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN, relationType);
 	}
 
 	/**
 	 * Adds a new "greaterThanOrEqualTo" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.greaterThanOrEqualTo("birthDate", thirtyYearsAgo)
+	 *     	.build();
+	 * </pre></blockquote>
 	 * @param key field name
 	 * @param value
 	 * @return
 	 */
 	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> greaterThanOrEqualTo(String key, C value) {
-		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN_OR_EQUAL_TO);
+		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN_OR_EQUAL_TO, RelationType.NO_RELATION);
 	}
 
 	/**
-	 * Adds a new "equals" criteria through given toMany relation key to the filterCriteriaList
-	 * @param key field name of relation
+	 * Adds a new "greaterThanOrEqualTo" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.greaterThanOrEqualTo("wage.amount", minWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
+	 *     	.build();
+	 * </pre></blockquote>
+	 * @param key field name
 	 * @param value
 	 * @return
 	 */
-	public GenericSpecificationBuilder<E> equalsWithToManyRelation(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.EQUAL_TO_MANY);
-	}
-
-	/**
-	 * Adds a new "equals" criteria through given toOne relation key to the filterCriteriaList
-	 * @param key field name of relation
-	 * @param value
-	 * @return
-	 */
-	public GenericSpecificationBuilder<E> equalsWithToOneRelation(String key, Object value) {
-		return addCriteria(key, value, CriteriaOperation.EQUAL_TO_ONE);
+	public <C extends Comparable<? super C>> GenericSpecificationBuilder<E> greaterThanOrEqualTo(String key, C value, RelationType relationType) {
+		return addComparableCriteria(key, value, CriteriaOperation.GREATER_THAN_OR_EQUAL_TO, relationType);
 	}
 
 	/**

@@ -50,49 +50,42 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 				return null;
 			}
 		case EQUAL: {
-			if (filterCriteria.getRelationType().equals(RelationType.NO_RELATION)) {
-				return criteriaBuilder.equal(root.get(key), filterCriteria.getValue());
-			}
-			else if (filterCriteria.getRelationType().equals(RelationType.TO_ONE)) {
-				final String columns[] = key.split("\\.");
-				Path<?> path = root.get(columns[0]);
-				for (int i = 1; i < columns.length; i++) {
-					path = path.get(columns[i]);
-				}
-
-				return criteriaBuilder.equal(path, filterCriteria.getValue());
-			}
-			else {
-				final String columns[] = key.split("\\.");
-				final Join<T, ?> joinedTable = root.join(columns[0]);
-				return criteriaBuilder.equal(joinedTable.get(columns[1]), filterCriteria.getValue());
-			}
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.equal(path, filterCriteria.getValue());
 		}
 
-		case LIKE:
-			return criteriaBuilder.like(root.get(key), "%" + filterCriteria.getValue() + "%");
+		case LIKE: {
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
+		}
 
-		case IN:
-			return root.get(key).in(filterCriteria.getValue());
+		case IN: {
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return path.in(filterCriteria.getValue());
+		}
 
 		case GREATER_THAN: {
 			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			return criteriaBuilder.greaterThan(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.greaterThan(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
 		}
 
 		case GREATER_THAN_OR_EQUAL_TO: {
 			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			return criteriaBuilder.greaterThanOrEqualTo(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.greaterThanOrEqualTo(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
 		}
 
 		case LESS_THAN: {
 			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			return criteriaBuilder.lessThan(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.lessThan(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
 		}
 
 		case LESS_THAN_OR_EQUAL_TO: {
 			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			return criteriaBuilder.lessThanOrEqualTo(root.get(key).as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.lessThanOrEqualTo(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
 		}
 
 		default:
@@ -106,4 +99,24 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 		}
 		throw new ClassCastException("TODO");//TODO
 	}
+
+	private Path<?> resolvePath(Root<E> root, String key, RelationType relationType) {
+		if (relationType.equals(RelationType.NO_RELATION)) {
+			return root.get(key);
+		}
+		else if (relationType.equals(RelationType.TO_ONE)) {
+			final String columns[] = key.split("\\.");
+			Path<?> path = root.get(columns[0]);
+			for (int i = 1; i < columns.length; i++) {
+				path = path.get(columns[i]);
+			}
+			return path;
+		}
+		else {
+			final String columns[] = key.split("\\.");
+			final Join<T, ?> joinedTable = root.join(columns[0]);
+			return joinedTable.get(columns[1]);
+		}
+	}
+
 }
