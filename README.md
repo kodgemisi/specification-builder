@@ -1,6 +1,6 @@
 # Specification Builder
 
-A tiny library that helps developers to build and combine complex specifications together with Spring Framework.
+A tiny library that helps developers to build and combine complex specifications together with Spring Data JPA.
 
 ## Quick Start
 It's enough to add this dependency to use this library.
