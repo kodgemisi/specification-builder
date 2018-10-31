@@ -4,11 +4,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.lang.NonNull;
 
+import javax.persistence.criteria.JoinType;
+
 /**
  * Created on October, 2018
  *
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
+ * @author Gökhan Birinci
  */
 
 /**
@@ -27,6 +30,8 @@ class FilterCriteria<T> {
 	@NonNull
 	private final CriteriaOperation operation;
 
+	private final JoinType joinType;
+
 	private final Class<T> clazz;
 
 	private final RelationType relationType;
@@ -35,6 +40,7 @@ class FilterCriteria<T> {
 		this.key = key;
 		this.value = value;
 		this.operation = operation;
+		this.joinType = null;
 		this.clazz = clazz;
 		this.relationType = RelationType.NO_RELATION;
 	}
@@ -43,13 +49,15 @@ class FilterCriteria<T> {
 		this.key = key;
 		this.value = value;
 		this.operation = operation;
+		this.joinType = null;
 		this.clazz = clazz;
 		this.relationType = relationType;
 	}
 
-	FilterCriteria(String key, CriteriaOperation operation, Class<T> clazz) {
+	FilterCriteria(String key, CriteriaOperation operation, JoinType joinType, Class<T> clazz) {
 		this.key = key;
 		this.operation = operation;
+		this.joinType = joinType;
 		this.clazz = clazz;
 		this.value = null;
 		this.relationType = RelationType.NO_RELATION;
