@@ -19,6 +19,7 @@ import javax.persistence.criteria.*;
  *
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
+ * @author Gökhan Birinci
  */
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -34,21 +35,25 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 		final String key = filterCriteria.getKey();
 
 		switch (operation) {
-		case JOIN:
-			root.join(key);
+		case JOIN: {
+			final JoinType joinType = filterCriteria.getJoinType();
+			root.join(key, joinType);
 			return null;
+		}
 
-		case JOIN_FETCH:
+		case JOIN_FETCH: {
 			final Class clazz = query.getResultType();
+			final JoinType joinType = filterCriteria.getJoinType();
 			if (clazz.equals(Long.class) || clazz.equals(long.class)) {
 				// If clazz is long then it's a count query for pageable
-				root.join(key);
+				root.join(key, joinType);
 				return null;
 			}
 			else {
-				root.fetch(key);
+				root.fetch(key, joinType);
 				return null;
 			}
+		}
 		case EQUAL: {
 			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
 			return criteriaBuilder.equal(path, filterCriteria.getValue());

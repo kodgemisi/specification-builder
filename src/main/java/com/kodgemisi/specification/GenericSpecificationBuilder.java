@@ -2,6 +2,7 @@ package com.kodgemisi.specification;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import javax.persistence.criteria.JoinType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import java.util.List;
  *
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
+ * @author Gökhan Birinci
  */
 public class GenericSpecificationBuilder<E> {
 
@@ -53,8 +55,8 @@ public class GenericSpecificationBuilder<E> {
 		return new GenericSpecificationBuilder<>();
 	}
 
-	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation) {
-		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, Void.class));
+	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation, JoinType joinType) {
+		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, joinType, Void.class));
 		return this;
 	}
 
@@ -75,21 +77,41 @@ public class GenericSpecificationBuilder<E> {
 	}
 
 	/**
-	 * Adds a new join criteria to the filterCriteriaList
+	 * Adds a new inner join criteria to the filterCriteriaList
 	 * @param key field name of relation
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> join(String key) {
-		return addCriteria(key, CriteriaOperation.JOIN);
+		return addCriteria(key, CriteriaOperation.JOIN, JoinType.INNER);
 	}
 
 	/**
-	 * Adds a new join fetch criteria to the filterCriteriaList
+	 * Adds a new join with given join type to the filterCriteriaList.
+	 * @param key field name of relation
+	 * @param joinType {@link javax.persistence.criteria.JoinType}
+	 * @return
+	 */
+	public GenericSpecificationBuilder<E> join(String key, JoinType joinType) {
+		return addCriteria(key, CriteriaOperation.JOIN, joinType);
+	}
+
+	/**
+	 * Adds a new inner join fetch criteria to the filterCriteriaList
 	 * @param key field name of relation
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> joinFetch(String key) {
-		return addCriteria(key, CriteriaOperation.JOIN_FETCH);
+		return addCriteria(key, CriteriaOperation.JOIN_FETCH, JoinType.INNER);
+	}
+
+	/**
+	 * Adds a new join with given join type to the filterCriteriaList.
+	 * @param key field name of relation
+	 * @param joinType {@link javax.persistence.criteria.JoinType }
+	 * @return
+	 */
+	public GenericSpecificationBuilder<E> joinFetch(String key, JoinType joinType) {
+		return addCriteria(key, CriteriaOperation.JOIN_FETCH, joinType);
 	}
 
 	/**
