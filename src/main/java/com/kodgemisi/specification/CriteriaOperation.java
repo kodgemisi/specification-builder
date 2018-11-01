@@ -5,11 +5,10 @@ package com.kodgemisi.specification;
  *
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
+ * @author Sedat Gokcen
  */
-enum CriteriaOperation {
+enum CriteriaOperation implements Operation {
 
-	JOIN,
-	JOIN_FETCH,
 	EQUAL,
 	EQUAL_TO_MANY,
 	EQUAL_TO_ONE,
