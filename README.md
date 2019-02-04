@@ -4,7 +4,7 @@ A tiny library that helps developers to build and combine complex specifications
 
 ## Quick Start
 It's enough to add this dependency to use this library.
-```
+```xml
 <dependencies>
   <dependency>
     <groupId>com.github.kodgemisi</groupId>
@@ -23,7 +23,7 @@ It's enough to add this dependency to use this library.
 
 ## How To Use
 
-```
+```java
   Specification<Person> specification = GenericSpecificationBuilder.<Person>of(Person.class)
  				.join("accounts")
  				.joinFetch("notifications")
