@@ -27,6 +27,7 @@ import java.util.List;
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
  * @author Gökhan Birinci
+ * @author Sedat Gokcen
  */
 public class GenericSpecificationBuilder<E> {
 
@@ -55,8 +56,8 @@ public class GenericSpecificationBuilder<E> {
 		return new GenericSpecificationBuilder<>();
 	}
 
-	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation, JoinType joinType) {
-		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, joinType, Void.class));
+	private GenericSpecificationBuilder<E> addCriteria(String key, Operation operation) {
+		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, Void.class));
 		return this;
 	}
 
@@ -82,7 +83,7 @@ public class GenericSpecificationBuilder<E> {
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> join(String key) {
-		return addCriteria(key, CriteriaOperation.JOIN, JoinType.INNER);
+		return addCriteria(key, JoinOperation.JOIN.type(JoinType.INNER));
 	}
 
 	/**
@@ -92,7 +93,7 @@ public class GenericSpecificationBuilder<E> {
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> join(String key, JoinType joinType) {
-		return addCriteria(key, CriteriaOperation.JOIN, joinType);
+		return addCriteria(key, JoinOperation.JOIN.type(joinType));
 	}
 
 	/**
@@ -101,7 +102,7 @@ public class GenericSpecificationBuilder<E> {
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> joinFetch(String key) {
-		return addCriteria(key, CriteriaOperation.JOIN_FETCH, JoinType.INNER);
+		return addCriteria(key, JoinOperation.JOIN_FETCH.type(JoinType.INNER));
 	}
 
 	/**
@@ -111,7 +112,7 @@ public class GenericSpecificationBuilder<E> {
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> joinFetch(String key, JoinType joinType) {
-		return addCriteria(key, CriteriaOperation.JOIN_FETCH, joinType);
+		return addCriteria(key, JoinOperation.JOIN_FETCH.type(joinType));
 	}
 
 	/**

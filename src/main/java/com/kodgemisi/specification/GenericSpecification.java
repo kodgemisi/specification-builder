@@ -20,6 +20,7 @@ import javax.persistence.criteria.*;
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
  * @author Gökhan Birinci
+ * @author Sedat Gokcen
  */
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -31,70 +32,78 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 	@Override
 	public Predicate toPredicate(Root<E> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 
-		final CriteriaOperation operation = filterCriteria.getOperation();
+		final Operation operation = filterCriteria.getOperation();
 		final String key = filterCriteria.getKey();
 
-		switch (operation) {
-		case JOIN: {
-			final JoinType joinType = filterCriteria.getJoinType();
+		if (operation instanceof JoinOperation) {
+			JoinOperation joinOperation = (JoinOperation) operation;
+			processJoinOperation(joinOperation, key, root, query);
+			return null;
+		}
+
+		final CriteriaOperation criteriaOperation = (CriteriaOperation) operation;
+
+		switch (criteriaOperation) {
+			case EQUAL: {
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return criteriaBuilder.equal(path, filterCriteria.getValue());
+			}
+
+			case LIKE: {
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
+			}
+
+			case IN: {
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return path.in(filterCriteria.getValue());
+			}
+
+			case GREATER_THAN: {
+				final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return criteriaBuilder.greaterThan(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			}
+
+			case GREATER_THAN_OR_EQUAL_TO: {
+				final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return criteriaBuilder.greaterThanOrEqualTo(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			}
+
+			case LESS_THAN: {
+				final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return criteriaBuilder.lessThan(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			}
+
+			case LESS_THAN_OR_EQUAL_TO: {
+				final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
+				final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+				return criteriaBuilder.lessThanOrEqualTo(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
+			}
+
+			default:
+				return null;
+		}
+	}
+
+	private void processJoinOperation(JoinOperation joinOperation, String key, Root<E> root, CriteriaQuery<?> query) {
+		final JoinType joinType = joinOperation.getType();
+
+		if (joinOperation == JoinOperation.JOIN) {
 			root.join(key, joinType);
-			return null;
+			return;
 		}
 
-		case JOIN_FETCH: {
-			final Class clazz = query.getResultType();
-			final JoinType joinType = filterCriteria.getJoinType();
-			if (clazz.equals(Long.class) || clazz.equals(long.class)) {
-				// If clazz is long then it's a count query for pageable
-				root.join(key, joinType);
-				return null;
-			}
-			else {
-				root.fetch(key, joinType);
-				return null;
-			}
-		}
-		case EQUAL: {
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.equal(path, filterCriteria.getValue());
-		}
+		final Class clazz = query.getResultType();
 
-		case LIKE: {
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
+		if (clazz.equals(Long.class) || clazz.equals(long.class)) {
+			// If clazz is long then it's a count query for pageable
+			root.join(key, joinType);
 		}
-
-		case IN: {
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return path.in(filterCriteria.getValue());
-		}
-
-		case GREATER_THAN: {
-			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.greaterThan(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
-		}
-
-		case GREATER_THAN_OR_EQUAL_TO: {
-			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.greaterThanOrEqualTo(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
-		}
-
-		case LESS_THAN: {
-			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.lessThan(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
-		}
-
-		case LESS_THAN_OR_EQUAL_TO: {
-			final ComparableFilterCriteria<C> comparableFilterCriteria = getComparableFilterCriteria();
-			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.lessThanOrEqualTo(path.as(comparableFilterCriteria.getClazz()), comparableFilterCriteria.getValue());
-		}
-
-		default:
-			return null;
+		else {
+			root.fetch(key, joinType);
 		}
 	}
 
