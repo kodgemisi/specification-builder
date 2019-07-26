@@ -51,6 +51,7 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 			}
 			else {
 				root.fetch(key, joinType);
+				query.distinct(true);
 				return null;
 			}
 		}
