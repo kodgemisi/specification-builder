@@ -36,30 +36,38 @@ class FilterCriteria<T> {
 
 	private final RelationType relationType;
 
-	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz) {
+	private final ConditionType conditionType;
+
+	// TODO: it should not be constant value
+	private final boolean caseSensitive = false;
+
+	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz, ConditionType conditionType) {
 		this.key = key;
 		this.value = value;
 		this.operation = operation;
 		this.joinType = null;
 		this.clazz = clazz;
 		this.relationType = RelationType.NO_RELATION;
+		this.conditionType = conditionType;
 	}
 
-	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz, RelationType relationType) {
+	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz, RelationType relationType, ConditionType conditionType) {
 		this.key = key;
 		this.value = value;
 		this.operation = operation;
 		this.joinType = null;
 		this.clazz = clazz;
 		this.relationType = relationType;
+		this.conditionType = conditionType;
 	}
 
-	FilterCriteria(String key, CriteriaOperation operation, JoinType joinType, Class<T> clazz) {
+	FilterCriteria(String key, CriteriaOperation operation, JoinType joinType, Class<T> clazz, ConditionType conditionType) {
 		this.key = key;
 		this.operation = operation;
 		this.joinType = joinType;
 		this.clazz = clazz;
 		this.value = null;
 		this.relationType = RelationType.NO_RELATION;
+		this.conditionType = conditionType;
 	}
 }

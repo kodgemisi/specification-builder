@@ -2,9 +2,11 @@ package com.kodgemisi.specification;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -13,17 +15,13 @@ import java.util.List;
  * </p>
  *
  * <blockquote><pre>
- *		GenericSpecificationBuilder.of(Person.class)
- *			.like("name", name)
- *			.greaterThan("age", age)
- *		.build();
+ * 		GenericSpecificationBuilder.of(Person.class)
+ * 			.like("name", name)
+ * 			.greaterThan("age", age)
+ * 		.build();
  * </pre></blockquote>
  *
- *
- * @param <E>
- *
- * Created on October, 2018
- *
+ * @param <E> Created on October, 2018
  * @author Destan Sarpkaya
  * @author Ersan Ceylan
  * @author Gökhan Birinci
@@ -34,20 +32,31 @@ public class GenericSpecificationBuilder<E> {
 
 	private final List<Specification<E>> specifications;
 
+	private final Map<Specification<E>, ConditionType> customSpecifications;
+
+	private final List<Map<String, String>> parameters;
+
+	// defaults to AND specification
+	private ConditionType activeConditionType;
+
 	private GenericSpecificationBuilder() {
 		filterCriteriaList = new ArrayList<>();
 		specifications = new ArrayList<>();
+		parameters = new ArrayList();
+		activeConditionType = ConditionType.AND;
+		customSpecifications = new HashMap<>();
 	}
 
 	/**
 	 * returns an instance of GenericSpecificationBuilder
+	 *
 	 * @param clazz
 	 * @param <E>
-	 * @throws IllegalArgumentException in case the given clazz is {@link java.lang.Number}.
 	 * @return this
+	 * @throws IllegalArgumentException in case the given clazz is {@link java.lang.Number}.
 	 */
 	public static <E> GenericSpecificationBuilder<E> of(Class<E> clazz) {
-		if(Number.class.isAssignableFrom(clazz)) {
+		if (Number.class.isAssignableFrom(clazz)) {
 			// This is to assure long type of clazz is for count queries
 			// See com.kodgemisi.suite.common.specification.GenericSpecification.toPredicate
 			throw new IllegalArgumentException("Only entities allowed.");
@@ -55,29 +64,46 @@ public class GenericSpecificationBuilder<E> {
 		return new GenericSpecificationBuilder<>();
 	}
 
+	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation) {
+		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, null, Void.class, activeConditionType));
+		return this;
+	}
+
 	private GenericSpecificationBuilder<E> addCriteria(String key, CriteriaOperation operation, JoinType joinType) {
-		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, joinType, Void.class));
+		filterCriteriaList.add(new FilterCriteria<Void>(key, operation, joinType, Void.class, activeConditionType));
 		return this;
 	}
 
 	@SuppressWarnings("unchecked")
-	private <C> GenericSpecificationBuilder<E>  addCriteria(String key, C value, CriteriaOperation operation, RelationType relationType) {
+	private <C> GenericSpecificationBuilder<E> addCriteria(String key, C value, CriteriaOperation operation, RelationType relationType) {
 		if (value != null) {
-			filterCriteriaList.add(new FilterCriteria<>(key, value, operation, (Class<C>) value.getClass(), relationType));
+			filterCriteriaList.add(new FilterCriteria<>(key, value, operation, (Class<C>) value.getClass(), relationType, activeConditionType));
 		}
 		return this;
 	}
 
 	@SuppressWarnings("unchecked")
-	private <C extends Comparable<? super C>> GenericSpecificationBuilder<E>  addComparableCriteria(String key, C value, CriteriaOperation operation, RelationType relationType) {
+	private <C extends Comparable<? super C>> GenericSpecificationBuilder<E> addComparableCriteria(String key, C value, CriteriaOperation operation,
+			RelationType relationType) {
 		if (value != null) {
-			filterCriteriaList.add(new ComparableFilterCriteria<C>(key, value, operation, (Class<C>) value.getClass(), relationType));
+			filterCriteriaList.add(new ComparableFilterCriteria<C>(key, value, operation, (Class<C>) value.getClass(), relationType, activeConditionType));
 		}
+		return this;
+	}
+
+	public GenericSpecificationBuilder<E> or() {
+		activeConditionType = ConditionType.OR;
+		return this;
+	}
+
+	public GenericSpecificationBuilder<E> and() {
+		activeConditionType = ConditionType.AND;
 		return this;
 	}
 
 	/**
 	 * Adds a new inner join criteria to the filterCriteriaList
+	 *
 	 * @param key field name of relation
 	 * @return
 	 */
@@ -87,7 +113,8 @@ public class GenericSpecificationBuilder<E> {
 
 	/**
 	 * Adds a new join with given join type to the filterCriteriaList.
-	 * @param key field name of relation
+	 *
+	 * @param key      field name of relation
 	 * @param joinType {@link javax.persistence.criteria.JoinType}
 	 * @return
 	 */
@@ -97,6 +124,7 @@ public class GenericSpecificationBuilder<E> {
 
 	/**
 	 * Adds a new inner join fetch criteria to the filterCriteriaList
+	 *
 	 * @param key field name of relation
 	 * @return
 	 */
@@ -106,7 +134,8 @@ public class GenericSpecificationBuilder<E> {
 
 	/**
 	 * Adds a new join with given join type to the filterCriteriaList.
-	 * @param key field name of relation
+	 *
+	 * @param key      field name of relation
 	 * @param joinType {@link javax.persistence.criteria.JoinType }
 	 * @return
 	 */
@@ -122,7 +151,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.equals("gender", Gender.FEMALE)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -139,7 +169,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.equals("addresses.city", cityName, {@link com.kodgemisi.specification.RelationType} RelationType.TO_MANY)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key          field name
 	 * @param value
 	 * @param relationType
 	 * @return
@@ -155,7 +186,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.like("bio", keyword)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -171,12 +203,21 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.like("department.name", departmentName, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> like(String key, Object value, RelationType relationType) {
 		return addCriteria(key, value, CriteriaOperation.LIKE, relationType);
+	}
+
+	public GenericSpecificationBuilder<E> isNull(String key) {
+		return addCriteria(key, CriteriaOperation.IS_NULL);
+	}
+
+	public GenericSpecificationBuilder<E> isNotNull(String key) {
+		return addCriteria(key, CriteriaOperation.IS_NOT_NULL);
 	}
 
 	/**
@@ -186,7 +227,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.in("name", name)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -202,6 +244,7 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.in("skills.name", Arrays.asList("JAVA", "RUBY"), {@link com.kodgemisi.specification.RelationType} RelationType.TO_MANY)
 	 *     	.build();
 	 * </pre></blockquote>
+	 *
 	 * @param key
 	 * @param value
 	 * @param relationType
@@ -218,7 +261,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.lessThan("birthDate", thirtyYearsAgo)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -234,7 +278,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.lessThan("wage.amount", maxWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -249,7 +294,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.lessThanOrEqualTo("birthDate", thirtyYearsAgo)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -265,7 +311,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.lessThanOrEqualTo("wage.amount", maxWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -280,7 +327,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.greaterThan("birthDate", thirtyYearsAgo)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -296,7 +344,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.greaterThan("wage.amount", minWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -311,7 +360,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.greaterThanOrEqualTo("birthDate", thirtyYearsAgo)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -327,7 +377,8 @@ public class GenericSpecificationBuilder<E> {
 	 *     	.greaterThanOrEqualTo("wage.amount", minWageAmount, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
 	 *     	.build();
 	 * </pre></blockquote>
-	 * @param key field name
+	 *
+	 * @param key   field name
 	 * @param value
 	 * @return
 	 */
@@ -337,39 +388,109 @@ public class GenericSpecificationBuilder<E> {
 
 	/**
 	 * Adds a new {@link org.springframework.data.jpa.domain.Specification} to the specifications list <b>directly</b>
+	 *
 	 * @param specification
 	 * @return
 	 */
 	public GenericSpecificationBuilder<E> custom(Specification<E> specification) {
-		specifications.add(specification);
+		this.customSpecifications.put(specification, activeConditionType);
+		return this;
+	}
+
+	public GenericSpecificationBuilder<E> customFunction(String functionName, String[] fieldNames, String... params) {
+
+		final int functionIndex = parameters.size();
+
+		final HashMap<String, String> parameterMap = new HashMap<>();
+		parameters.add(parameterMap);
+
+		List<Specification<E>> specifications = new ArrayList<>();
+		for (String fieldName : fieldNames) {
+
+			final Specification<E> fieldSpecification = (Specification<E>) (root, query, criteriaBuilder) -> {
+
+				int parameterIndex = 0;
+				final List<Expression<String>> parameterExpressions = new ArrayList<>();
+
+				if (fieldName.contains(".")) {
+					final String columns[] = fieldName.split("\\.");
+					final Join<E, ?> joinedTable = root.join(columns[0], JoinType.LEFT);
+					Path<String> path = joinedTable.get(columns[1]);
+					for (int i = 2; i < columns.length; i++) {
+						path = path.get(columns[i]);
+					}
+					parameterExpressions.add(path);
+				}
+				else {
+					parameterExpressions.add(root.get(fieldName));
+				}
+
+				for (String param : params) {
+					final String paramsName = "function" + functionIndex + "_param" + parameterIndex + "_" + System.currentTimeMillis();
+					parameterMap.put(paramsName, param);
+					final ParameterExpression<String> parameterExpression = criteriaBuilder.parameter(String.class, paramsName);
+					++parameterIndex;
+					parameterExpressions.add(parameterExpression);
+				}
+
+				final Expression<?>[] parameters = parameterExpressions.toArray(new Expression<?>[] {});
+				final Expression<Boolean> sqlFunction = criteriaBuilder.function(functionName, Boolean.class, parameters);
+
+				return criteriaBuilder.equal(sqlFunction, "");
+			};
+
+			specifications.add(fieldSpecification);
+		}
+
+		Specification<E> specificationResult = specifications.get(0);
+		for (int i = 1; i < specifications.size(); i++) {
+			specificationResult = Specification.where(specificationResult).or(specifications.get(i));
+		}
+
+		this.custom(specificationResult);
 		return this;
 	}
 
 	/**
 	 * <p>
-	 * 	Generates a {@link com.kodgemisi.specification.GenericSpecification} object for each given filter criteria paramater
-	 * 	by iterating filterCriteriaList then combines them with AND clause
+	 * Generates a {@link com.kodgemisi.specification.GenericSpecification} object for each given filter criteria paramater
+	 * by iterating filterCriteriaList then combines them with AND clause
 	 * </p>
 	 *
 	 * @return {@link org.springframework.data.jpa.domain.Specification}
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Specification<E> build() {
 		if (filterCriteriaList.size() == 0) {
 			return null;
 		}
 
+		Specification<E> andSpecs = null;
+		Specification<E> orSpecs = null;
 		for (FilterCriteria<?> filterCriteria : filterCriteriaList) {
-			this.specifications.add(new GenericSpecification(filterCriteria));
+
+			final Specification<E> specification = new GenericSpecification(filterCriteria);
+			if (filterCriteria.getConditionType().equals(ConditionType.AND)) {
+				andSpecs = Specification.where(andSpecs).and(specification);
+			}
+			else {
+				orSpecs = Specification.where(orSpecs).or(specification);
+			}
 		}
 
-		// this is required to initiate where clause
-		Specification<E> specificationResult = this.specifications.get(0);
-		for (int i = 1; i < this.specifications.size(); i++) {
-			specificationResult = Specification.where(specificationResult).and(specifications.get(i));
+		// iterate over custom specification list
+		for (Map.Entry<Specification<E>, ConditionType> specificationConditionTypeEntry : customSpecifications.entrySet()) {
+			if (specificationConditionTypeEntry.getValue().equals(ConditionType.AND)) {
+				andSpecs = Specification.where(andSpecs).and(specificationConditionTypeEntry.getKey());
+			}
+			else {
+				orSpecs = Specification.where(orSpecs).or(specificationConditionTypeEntry.getKey());
+			}
 		}
 
-		return specificationResult;
+		final Specification<E> specificationResult = Specification.where(andSpecs).and(orSpecs);
+
+		return new GenericSpecificationContainer<E>(specificationResult, parameters);
 	}
 
 }

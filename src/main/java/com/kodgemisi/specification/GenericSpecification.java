@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 
 import javax.persistence.criteria.*;
+import java.util.IllegalFormatException;
 
 /**
  * <p>
@@ -59,10 +60,23 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
 			return criteriaBuilder.equal(path, filterCriteria.getValue());
 		}
-
+		case IS_NULL: {
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.isNull(path);
+		}
+		case IS_NOT_NULL: {
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			return criteriaBuilder.isNotNull(path);
+		}
 		case LIKE: {
 			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			return criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
+			if (filterCriteria.isCaseSensitive()) {
+				criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
+			}
+			else {
+				return criteriaBuilder.like(criteriaBuilder.lower(path.as(String.class)),
+											"%" + String.valueOf(filterCriteria.getValue()).toLowerCase() + "%");
+			}
 		}
 
 		case IN: {
@@ -106,21 +120,27 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 		throw new ClassCastException("TODO");//TODO
 	}
 
-	private Path<?> resolvePath(Root<E> root, String key, RelationType relationType) {
+	private Path<?> resolvePath(Root<E> root, String key, RelationType relationType) throws IllegalFormatException {
 		if (relationType.equals(RelationType.NO_RELATION)) {
 			return root.get(key);
 		}
 		else if (relationType.equals(RelationType.TO_ONE)) {
 			final String columns[] = key.split("\\.");
-			Path<?> path = root.get(columns[0]);
-			for (int i = 1; i < columns.length; i++) {
+
+			if (columns.length == 1) {
+				return root.get(key);
+			}
+			// throw exception if columns less than or equal to 1
+			final Join<T, ?> joinedTable = root.join(columns[0], JoinType.LEFT);
+			Path<Object> path = joinedTable.get(columns[1]);
+			for (int i = 2; i < columns.length; i++) {
 				path = path.get(columns[i]);
 			}
 			return path;
 		}
 		else {
 			final String columns[] = key.split("\\.");
-			final Join<T, ?> joinedTable = root.join(columns[0]);
+			final Join<T, ?> joinedTable = root.join(columns[0], JoinType.LEFT);
 			return joinedTable.get(columns[1]);
 		}
 	}
