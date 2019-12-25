@@ -1,12 +1,10 @@
 package com.kodgemisi.specification;
 
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <p>
@@ -426,7 +424,8 @@ public class GenericSpecificationBuilder<E> {
 				}
 
 				for (String param : params) {
-					final String paramsName = "function" + functionIndex + "_param" + parameterIndex + "_" + System.currentTimeMillis();
+					final String paramsName = "function" + functionIndex + "_param" + parameterIndex + "_" +
+							StringUtils.deleteAny(UUID.randomUUID().toString(), "-");
 					parameterMap.put(paramsName, param);
 					final ParameterExpression<String> parameterExpression = criteriaBuilder.parameter(String.class, paramsName);
 					++parameterIndex;
@@ -461,7 +460,7 @@ public class GenericSpecificationBuilder<E> {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Specification<E> build() {
-		if (filterCriteriaList.size() == 0) {
+		if (filterCriteriaList.size() == 0 && customSpecifications.isEmpty()) {
 			return null;
 		}
 

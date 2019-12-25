@@ -37,15 +37,16 @@ public class GenericSpecificationContainer<E> implements Specification<E> {
 		return new GenericSpecificationContainer(specification);
 	}
 
-//	@Override
-//	public Specification<E> and(Specification<E> other) {
-//		return null;
-//	}
-
 	public GenericSpecificationContainer<E> or(GenericSpecificationContainer<E> spec) {
 		final ArrayList<Map<String, String>> parameterList = new ArrayList<>(this.parameters);
 		parameterList.addAll(spec.parameters);
 		return new GenericSpecificationContainer<>(Specification.where(this.specification).or(spec), parameterList);
+	}
+
+	public GenericSpecificationContainer<E> and(GenericSpecificationContainer<E> spec) {
+		final ArrayList<Map<String, String>> parameterList = new ArrayList<>(this.parameters);
+		parameterList.addAll(spec.parameters);
+		return new GenericSpecificationContainer<>(Specification.where(this.specification).and(spec), parameterList);
 	}
 
 	@Override
