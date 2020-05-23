@@ -14,6 +14,7 @@ enum CriteriaOperation {
 	EQUAL_TO_MANY,
 	EQUAL_TO_ONE,
 	LIKE,
+	LIKE_IGNORE_CASE,
 	IS_NULL,
 	IS_NOT_NULL,
 	IN,

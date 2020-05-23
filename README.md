@@ -34,6 +34,7 @@ It's enough to add this dependency to use this library.
  				.greaterThanOrEqualTo("birthDate", minBirthDate)
  				.lessThanOrEqualTo("birthDate", maxBirthDate)
  				.like("about", keyword)
+ 				.likeIgnoreCase("about", keyword)
  				.in("city", cities)
  				.custom(customSpecification)
  				.build();

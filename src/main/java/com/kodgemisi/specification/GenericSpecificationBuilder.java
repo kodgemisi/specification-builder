@@ -210,6 +210,39 @@ public class GenericSpecificationBuilder<E> {
 		return addCriteria(key, value, CriteriaOperation.LIKE, relationType);
 	}
 
+	/**
+	 * Adds a new ignore-case "like" criteria to the filterCriteriaList
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.likeIgnoreCase("bio", keyword)
+	 *     	.build();
+	 * </pre></blockquote>
+	 *
+	 * @param key   field name
+	 * @param value
+	 * @return
+	 */
+	public GenericSpecificationBuilder<E> likeIgnoreCase(String key, Object value) {
+		return addCriteria(key, value, CriteriaOperation.LIKE_IGNORE_CASE, RelationType.NO_RELATION);
+	}
+
+	/**
+	 * Adds a new ignore-case "like" criteria to the filterCriteriaList by joining to given relation
+	 * In order to define a relation, you must use "." delimiter after relation name
+	 * <blockquote><pre>
+	 *     GenericSpecificationBuilder.of(Person.class)
+	 *     	.likeIgnoreCase("department.name", departmentName, {@link com.kodgemisi.specification.RelationType} RelationType.TO_ONE)
+	 *     	.build();
+	 * </pre></blockquote>
+	 *
+	 * @param key   field name
+	 * @param value
+	 * @return
+	 */
+	public GenericSpecificationBuilder<E> likeIgnoreCase(String key, Object value, RelationType relationType) {
+		return addCriteria(key, value, CriteriaOperation.LIKE_IGNORE_CASE, relationType);
+	}
+
 	public GenericSpecificationBuilder<E> isNull(String key) {
 		return addCriteria(key, CriteriaOperation.IS_NULL);
 	}

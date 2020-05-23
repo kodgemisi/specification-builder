@@ -38,9 +38,6 @@ class FilterCriteria<T> {
 
 	private final ConditionType conditionType;
 
-	// TODO: it should not be constant value
-	private final boolean caseSensitive = false;
-
 	FilterCriteria(String key, T value, CriteriaOperation operation, Class<T> clazz, ConditionType conditionType) {
 		this.key = key;
 		this.value = value;
