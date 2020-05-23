@@ -70,13 +70,13 @@ class GenericSpecification<E, T, C extends Comparable<? super C>> implements Spe
 		}
 		case LIKE: {
 			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
-			if (filterCriteria.isCaseSensitive()) {
-				criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
-			}
-			else {
-				return criteriaBuilder.like(criteriaBuilder.lower(path.as(String.class)),
-											"%" + String.valueOf(filterCriteria.getValue()).toLowerCase() + "%");
-			}
+			return criteriaBuilder.like(path.as(String.class), "%" + filterCriteria.getValue() + "%");
+		}
+
+		case LIKE_IGNORE_CASE: {
+			final Path<?> path = resolvePath(root, filterCriteria.getKey(), filterCriteria.getRelationType());
+			final Expression<String> parameterExpression = criteriaBuilder.literal("%" + String.valueOf(filterCriteria.getValue()) + "%");
+			return criteriaBuilder.like(criteriaBuilder.upper(path.as(String.class)), criteriaBuilder.upper(parameterExpression));
 		}
 
 		case IN: {
